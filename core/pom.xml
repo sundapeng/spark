@@ -367,6 +367,11 @@
       <artifactId>commons-crypto</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.meteogroup.jbrotli</groupId>
+      <artifactId>jbrotli</artifactId>
+    </dependency>
+
     <!--
      The following dependencies are depended upon in HiveCredentialProvider, but are only executed if Hive is enabled in
      the user's Hadoop configuration.  So in order to prevent spark-core from depending on Hive, these deps have been

@@ -24,10 +24,11 @@ import com.github.luben.zstd.{ZstdInputStream, ZstdOutputStream}
 import com.ning.compress.lzf.{LZFInputStream, LZFOutputStream}
 import net.jpountz.lz4.{LZ4BlockInputStream, LZ4BlockOutputStream}
 import org.xerial.snappy.{Snappy, SnappyInputStream, SnappyOutputStream}
-
 import org.apache.spark.SparkConf
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.util.Utils
+import org.meteogroup.jbrotli.Brotli
+import org.meteogroup.jbrotli.io.{BrotliInputStream, BrotliOutputStream}
 
 /**
  * :: DeveloperApi ::
@@ -58,7 +59,8 @@ private[spark] object CompressionCodec {
     "lz4" -> classOf[LZ4CompressionCodec].getName,
     "lzf" -> classOf[LZFCompressionCodec].getName,
     "snappy" -> classOf[SnappyCompressionCodec].getName,
-    "zstd" -> classOf[ZStdCompressionCodec].getName)
+    "zstd" -> classOf[ZStdCompressionCodec].getName,
+    "brotli" -> classOf[BrotliCompressionCodec].getName)
 
   def getCodecName(conf: SparkConf): String = {
     conf.get(configKey, DEFAULT_COMPRESSION_CODEC)
@@ -249,5 +251,47 @@ class ZStdCompressionCodec(conf: SparkConf) extends CompressionCodec {
     // Wrap the zstd input stream in a buffered input stream so that we can
     // avoid overhead excessive of JNI call while trying to uncompress small amount of data.
     new BufferedInputStream(new ZstdInputStream(s), bufferSize)
+  }
+}
+
+
+/**
+  * :: DeveloperApi ::
+  * Brotli implementation of [[org.apache.spark.io.CompressionCodec]]. For more
+  * details see - https://tools.ietf.org/html/rfc7932
+  *
+  * @note The wire protocol for this codec is not guaranteed to be compatible across versions
+  * of Spark. This is intended for use as an internal compression utility within a single Spark
+  * application.
+  */
+@DeveloperApi
+class BrotliCompressionCodec(conf: SparkConf) extends CompressionCodec {
+
+  private val bufferSize = conf.getSizeAsBytes("spark.io.compression.brotli.bufferSize",
+    "32k").toInt
+  // Whether to enable compression mode for UTF-8 format text input.
+  // By default, compressor is GENERIC mode.
+  private val isText = conf.getBoolean("spark.io.compression.brotli.isText", false)
+
+  // Compression level for Brotli compression codec.
+  // Increasing the compression level will result in better compression at the expense of more CPU
+  // and memory, range is 0 to 11.
+  private val qualityLevel = conf.getInt("spark.io.compression.brotli.qualityLevel",
+    Brotli.DEFAULT_QUALITY)
+
+  private val parameter = new Brotli.Parameter()
+    .setMode(if (isText) Brotli.Mode.TEXT else Brotli.Mode.GENERIC)
+    .setQuality(qualityLevel);
+
+  override def compressedOutputStream(s: OutputStream): OutputStream = {
+    // Wrap the brotli output stream in a buffered output stream, so that we can
+    // avoid overhead excessive of JNI call while trying to compress small amount of data.
+    new BufferedOutputStream(new BrotliOutputStream(s, parameter), bufferSize)
+  }
+
+  override def compressedInputStream(s: InputStream): InputStream = {
+    // Wrap the brotli input stream in a buffered input stream so that we can
+    // avoid overhead excessive of JNI call while trying to uncompress small amount of data.
+    new BufferedInputStream(new BrotliInputStream(s), bufferSize)
   }
 }

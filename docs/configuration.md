@@ -885,12 +885,14 @@ Apart from these, the following properties are also available, and may be useful
   <td>
     The codec used to compress internal data such as RDD partitions, event log, broadcast variables
     and shuffle outputs. By default, Spark provides three codecs: <code>lz4</code>, <code>lzf</code>,
-    and <code>snappy</code>. You can also use fully qualified class names to specify the codec,
+    <code>snappy</code>, <code>zstd</code> and <code>brotli</code>. You can also use fully qualified
+    class names to specify the codec,
     e.g.
     <code>org.apache.spark.io.LZ4CompressionCodec</code>,
     <code>org.apache.spark.io.LZFCompressionCodec</code>,
     <code>org.apache.spark.io.SnappyCompressionCodec</code>,
-    and <code>org.apache.spark.io.ZstdCompressionCodec</code>.
+    <code>org.apache.spark.io.ZstdCompressionCodec</code>,
+    and <code>org.apache.spark.io.BrotliCompressionCodec</code>.
   </td>
 </tr>
 <tr>
@@ -924,6 +926,30 @@ Apart from these, the following properties are also available, and may be useful
     Buffer size used in Zstd compression, in the case when Zstd compression codec
     is used. Lowering this size will lower the shuffle memory usage when Zstd is used, but it
     might increase the compression cost because of excessive JNI call overhead.
+  </td>
+</tr>
+<tr>
+  <td><code>spark.io.compression.brotli.bufferSize</code></td>
+  <td>32k</td>
+  <td>
+    Buffer size used in Brotli compression, in the case when Brotli compression codec
+    is used. Lowering this size will lower the shuffle memory usage when Brotli is used, but it
+    might increase the compression cost because of excessive JNI call overhead.
+  </td>
+</tr>
+<tr>
+  <td><code>spark.io.compression.brotli.isText</code></td>
+  <td>false</td>
+  <td>
+    Whether to enable compression mode for UTF-8 format text input. By default, compressor is GENERIC mode.
+  </td>
+</tr>
+<tr>
+  <td><code>spark.io.compression.brotli.qualityLevel</code></td>
+  <td>11</td>
+  <td>
+    Compression level for Brotli compression codec. Increasing the compression level will result in better
+    compression at the expense of more CPU and memory, range is 0 to 11.
   </td>
 </tr>
 <tr>

@@ -122,6 +122,24 @@ class CompressionCodecSuite extends SparkFunSuite {
     testConcatenationOfSerializedStreams(codec)
   }
 
+  test("brotli compression codec") {
+    val codec = CompressionCodec.createCodec(conf, classOf[BrotliCompressionCodec].getName)
+    assert(codec.getClass === classOf[BrotliCompressionCodec])
+    testCodec(codec)
+  }
+
+  test("brotli compression codec short form") {
+    val codec = CompressionCodec.createCodec(conf, "brotli")
+    assert(codec.getClass === classOf[BrotliCompressionCodec])
+    testCodec(codec)
+  }
+
+  test("brotli supports concatenation of serialized brotli") {
+    val codec = CompressionCodec.createCodec(conf, classOf[BrotliCompressionCodec].getName)
+    assert(codec.getClass === classOf[BrotliCompressionCodec])
+    testConcatenationOfSerializedStreams(codec)
+  }
+
   test("bad compression codec") {
     intercept[IllegalArgumentException] {
       CompressionCodec.createCodec(conf, "foobar")
